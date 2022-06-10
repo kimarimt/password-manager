@@ -1,5 +1,7 @@
 from tkinter import *
 from PIL import ImageTk, Image
+from string import ascii_letters, digits
+from random import choice
 
 
 class App(Tk):
@@ -7,6 +9,7 @@ class App(Tk):
     screen_width = 700
     screen_height = 400
     label_font = ('Arial', 14)
+    password_size = 18
 
     def __init__(self):
         super().__init__()
@@ -16,7 +19,9 @@ class App(Tk):
 
         # Canvas
         self.canvas = Canvas(master=self)
-        self.canvas.configure(width=self.screen_width, height=self.screen_height)
+        self.canvas.configure(
+            width=self.screen_width,
+            height=self.screen_height)
         self.canvas.place(relx=0.5, rely=0.5, anchor=CENTER)
 
         # Logo
@@ -46,15 +51,43 @@ class App(Tk):
         password_label.grid(row=3, column=0)
         self.password_entry = Entry(master=self.canvas)
         self.password_entry.grid(row=3, column=1, sticky='ew')
-        
+
         # Password Button
         password_button = Button(master=self.canvas)
-        password_button.configure(text='Generate Password', font=self.label_font)
+        password_button.configure(
+            text='Generate Password',
+            font=self.label_font,
+            command=self.generate_password)
         password_button.grid(row=3, column=2, sticky='e')
 
         # Add Button
         add_button = Button(master=self.canvas)
-        add_button.configure(text='Add', font=self.label_font)
+        add_button.configure(
+            text='Add',
+            font=self.label_font,
+            command=self.add_password)
         add_button.grid(row=4, column=1, columnspan=2, sticky='ew')
-        
 
+    def generate_password(self):
+        characters = f'{ascii_letters}{digits}!@#$%^&*'
+        password = []
+
+        for _ in range(self.password_size):
+            password.append(choice(characters))
+
+        self.password_entry.delete(0, END)
+        self.password_entry.insert(0, ''.join(password))
+
+    def add_password(self):
+        with open('data.txt', 'a') as f:
+            website = self.website_entry.get()
+            username = self.username_entry.get()
+            password = self.password_entry.get()
+
+            data = f'{website} | {username} | {password}\n'
+            f.write(data)
+            f.close()
+
+        self.website_entry.delete(0, END)
+        self.username_entry.delete(0, END)
+        self.password_entry.delete(0, END)
