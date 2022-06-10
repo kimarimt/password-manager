@@ -1,7 +1,9 @@
 from tkinter import *
+from tkinter import messagebox
 from PIL import ImageTk, Image
 from string import ascii_letters, digits
 from random import choice
+import pyperclip
 
 
 class App(Tk):
@@ -77,17 +79,25 @@ class App(Tk):
 
         self.password_entry.delete(0, END)
         self.password_entry.insert(0, ''.join(password))
+        pyperclip.copy("".join(password))
+        messagebox.showinfo('Copied', 'Password saved to clipboard')
 
     def add_password(self):
-        with open('data.txt', 'a') as f:
-            website = self.website_entry.get()
-            username = self.username_entry.get()
-            password = self.password_entry.get()
+        website = self.website_entry.get()
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        is_ok = messagebox.askyesno('Confirm password save', f'Is it okay to save this password for {website}')
+        
+        if is_ok:
+            with open('data.txt', 'a') as f:
+                data = f'{website} | {username} | {password}\n'
+                f.write(data)
+                f.close()
 
-            data = f'{website} | {username} | {password}\n'
-            f.write(data)
-            f.close()
-
-        self.website_entry.delete(0, END)
-        self.username_entry.delete(0, END)
-        self.password_entry.delete(0, END)
+            messagebox.showinfo('Saved', 'Password saved to data.txt')
+            self.website_entry.delete(0, END)
+            self.username_entry.delete(0, END)
+            self.password_entry.delete(0, END)
+        else:
+            messagebox.showinfo('Not saved', 'Password not saved')
+        
