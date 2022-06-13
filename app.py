@@ -5,7 +5,12 @@ from string import ascii_letters, digits
 from random import choice
 import pyperclip
 import json
+import os.path
 
+
+# Bugs to address
+    # 1. The same website can be saved multiple times. Added logic to check if 
+    #. website is already in self.data
 
 class App(Tk):
 
@@ -13,10 +18,12 @@ class App(Tk):
     screen_height = 400
     label_font = ('Arial', 14)
     password_size = 18
+    passwords_file = 'passwords.json'
 
     def __init__(self):
         super().__init__()
         self.data = {}
+        self.search_result = {}
         self.title('Password Manager')
         self.geometry(f'{self.screen_width}x{self.screen_height}')
         self.resizable(False, False)
@@ -40,7 +47,17 @@ class App(Tk):
         website_label.configure(text='Website:', font=self.label_font)
         website_label.grid(row=1, column=0)
         self.website_entry = Entry(master=self.canvas)
-        self.website_entry.grid(row=1, column=1, columnspan=2, sticky='ew')
+        self.website_entry.grid(row=1, column=1, sticky='ew')
+
+        # Search Button
+        search_button = Button(master=self.canvas)
+        search_button.configure(
+            text='Search',
+            font=self.label_font,
+            command=self.search
+        )
+        search_button.grid(row=1, column=2, columnspan=2, sticky='ew')
+        self.load_passwords()
 
         # Username Field
         username_label = Label(master=self.canvas)
@@ -88,32 +105,67 @@ class App(Tk):
         website = self.website_entry.get()
         username = self.username_entry.get()
         password = self.password_entry.get()
-        
+
         if not website or not username or not password:
             messagebox.showwarning(
-                'Entry fields empty', 
+                'Entry fields empty',
                 'All fields are required to save the password')
         else:
-            is_ok = messagebox.askyesno('Confirm password save', f'Is it okay to save this password for {website}')
+            is_ok = messagebox.askyesno(
+                'Confirm password save',
+                f'Is it okay to save this password for {website}')
             if is_ok:
                 if 'passwords' not in self.data.keys():
                     self.data['passwords'] = []
-                
-                with open('passwords.json', 'w') as f:
+                with open(self.passwords_file, 'w') as f:
                     password_data = {
                         'website': website,
                         'username': username,
                         'password': password
-                    } 
+                    }
                     self.data['passwords'].append(password_data)
                     json.dump(self.data, f, indent=2)
                     f.close()
-                
-                messagebox.showinfo('Saved', 'Password saved to passwords.json')
+
+                messagebox.showinfo(
+                    'Saved', f'Password saved to {self.passwords_file}')
                 self.website_entry.delete(0, END)
                 self.username_entry.delete(0, END)
                 self.password_entry.delete(0, END)
             else:
                 messagebox.showinfo('Not saved', 'Password not saved')
 
-            
+    def load_passwords(self):
+        if os.path.exists(self.passwords_file):
+            with open(self.passwords_file, 'r') as f:
+                self.data = json.load(f)
+                f.close()
+        else:
+            messagebox.showerror(
+                'File doesn\'t exist',
+                f'{self.passwords_file} not in current directory'
+            )
+
+    def search(self):
+        try:
+            found = False
+            website = self.website_entry.get()
+
+            if website:
+                for entry in self.data['passwords']:
+                    if website in entry.values():
+                        messagebox.showinfo(
+                            f'Info for {website.capitalize()}',
+                            f'Username: {entry["username"]}\nPassword: {entry["password"]}')
+                        found = True
+                        break
+
+                if not found:
+                    raise ValueError
+            else:
+                messagebox.showerror(
+                    'Website field empty',
+                    'field required for search')
+        except ValueError:
+            messagebox.showerror('Value not saved', f'{website} is not saved in {self.passwords_file}'
+                                 )
