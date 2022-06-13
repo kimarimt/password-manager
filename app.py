@@ -4,6 +4,7 @@ from PIL import ImageTk, Image
 from string import ascii_letters, digits
 from random import choice
 import pyperclip
+import json
 
 
 class App(Tk):
@@ -15,6 +16,7 @@ class App(Tk):
 
     def __init__(self):
         super().__init__()
+        self.data = {}
         self.title('Password Manager')
         self.geometry(f'{self.screen_width}x{self.screen_height}')
         self.resizable(False, False)
@@ -86,18 +88,32 @@ class App(Tk):
         website = self.website_entry.get()
         username = self.username_entry.get()
         password = self.password_entry.get()
-        is_ok = messagebox.askyesno('Confirm password save', f'Is it okay to save this password for {website}')
         
-        if is_ok:
-            with open('data.txt', 'a') as f:
-                data = f'{website} | {username} | {password}\n'
-                f.write(data)
-                f.close()
-
-            messagebox.showinfo('Saved', 'Password saved to data.txt')
-            self.website_entry.delete(0, END)
-            self.username_entry.delete(0, END)
-            self.password_entry.delete(0, END)
+        if not website or not username or not password:
+            messagebox.showwarning(
+                'Entry fields empty', 
+                'All fields are required to save the password')
         else:
-            messagebox.showinfo('Not saved', 'Password not saved')
-        
+            is_ok = messagebox.askyesno('Confirm password save', f'Is it okay to save this password for {website}')
+            if is_ok:
+                if 'passwords' not in self.data.keys():
+                    self.data['passwords'] = []
+                
+                with open('passwords.json', 'w') as f:
+                    password_data = {
+                        'website': website,
+                        'username': username,
+                        'password': password
+                    } 
+                    self.data['passwords'].append(password_data)
+                    json.dump(self.data, f, indent=2)
+                    f.close()
+                
+                messagebox.showinfo('Saved', 'Password saved to passwords.json')
+                self.website_entry.delete(0, END)
+                self.username_entry.delete(0, END)
+                self.password_entry.delete(0, END)
+            else:
+                messagebox.showinfo('Not saved', 'Password not saved')
+
+            
